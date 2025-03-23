@@ -4,29 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 	"log"
 	"net/http"
 )
 
 var task string
-var DB *gorm.DB
-
-type requestBody struct {
-	gorm.Model
-	Task   string `json:"task"`
-	IsDone bool   `json:"is_done"`
-}
-
-func InitDB() {
-	dsn := "host=localhost user=postgres password=yourpassword dbname=postgres port=5432"
-	var err error
-	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		log.Fatalf("Failed to connect to database, %v ", err)
-	}
-}
 
 func getHandler(w http.ResponseWriter, r *http.Request) {
 	var tasks []requestBody
