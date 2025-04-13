@@ -9,11 +9,9 @@ import (
 	"net/http"
 )
 
-var task string
-
 func main() {
 	database.InitDB()
-	database.DB.AutoMigrate(&taskService.RequestBody{})
+	//database.DB.AutoMigrate(&taskService.RequestBody{})
 
 	repo := taskService.NewTaskRepository(database.DB)
 	service := taskService.NewService(repo)
