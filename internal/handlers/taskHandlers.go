@@ -32,7 +32,7 @@ func (h *Handler) GetHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) PostHandler(w http.ResponseWriter, r *http.Request) {
-	var task taskService.RequestBody
+	var task taskService.Tasks
 	err := json.NewDecoder(r.Body).Decode(&task)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -60,7 +60,7 @@ func (h *Handler) PatchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var task taskService.RequestBody
+	var task taskService.Tasks
 	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

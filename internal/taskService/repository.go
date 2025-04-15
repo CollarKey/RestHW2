@@ -5,12 +5,12 @@ import "gorm.io/gorm"
 type TaskRepository interface {
 	//CreateTask - Передлаем в функцию task типа Task из orm.go
 	// возвращаем созданный Task и ошибку
-	CreateTask(task RequestBody) (RequestBody, error)
+	CreateTask(task Tasks) (Tasks, error)
 	// GetAllTasks - Возвращаем массив из всех задач в БД и ошибку
-	GetAllTasks() ([]RequestBody, error)
+	GetAllTasks() ([]Tasks, error)
 	// UpdateTaskByID - передаем id и Task, возврщаем обновленный Task
 	// и ошибку
-	UpdateTaskByID(id uint, task RequestBody) (RequestBody, error)
+	UpdateTaskByID(id uint, task Tasks) (Tasks, error)
 	// DeleteTaskByID - Передаем id для удаления, возвращаем только ошибку
 	DeleteTaskByID(id uint) error
 }
@@ -24,36 +24,36 @@ func NewTaskRepository(db *gorm.DB) *taskRepository {
 }
 
 // (r *taskRepository) привязывает данную функцию к нашему репозиторию
-func (r *taskRepository) CreateTask(task RequestBody) (RequestBody, error) {
+func (r *taskRepository) CreateTask(task Tasks) (Tasks, error) {
 	result := r.db.Create(&task)
 	if result.Error != nil {
-		return RequestBody{}, result.Error
+		return Tasks{}, result.Error
 	}
 	return task, nil
 }
 
-func (r *taskRepository) GetAllTasks() ([]RequestBody, error) {
-	var tasks []RequestBody
+func (r *taskRepository) GetAllTasks() ([]Tasks, error) {
+	var tasks []Tasks
 	err := r.db.Find(&tasks).Error
 	return tasks, err
 }
 
-func (r *taskRepository) UpdateTaskByID(id uint, task RequestBody) (RequestBody, error) {
-	var updateTask RequestBody
+func (r *taskRepository) UpdateTaskByID(id uint, task Tasks) (Tasks, error) {
+	var updateTask Tasks
 	if err := r.db.First(&updateTask, id).Error; err != nil {
-		return RequestBody{}, err
+		return Tasks{}, err
 	}
 
 	err := r.db.Model(&updateTask).Updates(task)
 	if err.Error != nil {
-		return RequestBody{}, err.Error
+		return Tasks{}, err.Error
 	}
 
 	return updateTask, nil
 }
 
 func (r *taskRepository) DeleteTaskByID(id uint) error {
-	return r.db.Delete(&RequestBody{}, id).Error
+	return r.db.Delete(&Tasks{}, id).Error
 	// написал ранее result := r.db.Delete(&requestBody{}, id)
 	// if result.Error != nil {
 	//	return result.Error
