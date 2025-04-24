@@ -10,7 +10,8 @@ import (
 var DB *gorm.DB
 
 func InitDB() {
-	dsn := "host=localhost user=postgres password=yourpassword dbname=postgres port=5432"
+
+	dsn := "postgres://postgres:yourpassword@localhost:5432/postgres?sslmode=disable"
 	var err error
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
 		DisableAutomaticPing:                     true,

@@ -1,7 +1,9 @@
 package taskService
 
+import "gorm.io/gorm"
+
 type Tasks struct {
-	ID     uint   `gorm:"primaryKey" json:"id"`
+	gorm.Model
 	Task   string `json:"task"`
 	IsDone bool   `json:"is_done"`
 }
