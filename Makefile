@@ -4,6 +4,8 @@
 DB_DSN := "postgres://postgres:yourpassword@localhost:5432/postgres?sslmode=disable"
 MIGRATE := migrate -source file://migrations -database $(DB_DSN)
 
+.PHONY: migrate migrate-down migrate-down-all
+
 # Таргет для создания новой миграции
 migrate-new:
 	migrate create -ext sql -dir ./migrations ${NAME}

@@ -7,14 +7,25 @@ import (
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
+	"strings"
 )
 
+// Проверка наличия ошибки создания таблицы 'tasks' в БД
+func isTableNotExistError(err error) bool {
+	return strings.Contains(err.Error(), "таблица 'tasks' не найдена (код: 42P01)")
+}
+
 func main() {
-	database.InitDB()
+	dbConnect, dbErr := database.InitDB()
+	if dbErr != nil {
+		if isTableNotExistError(dbErr) {
+			log.Fatalf("FATAL ERROR: %v\nВыполните: make migrate", dbErr)
+		}
+		log.Fatal("Ошибки иницилизации БД:", dbErr)
+	}
 
-	repo := taskService.NewTaskRepository(database.DB)
+	repo := taskService.NewTaskRepository(dbConnect)
 	service := taskService.NewService(repo)
-
 	handler := handlers.NewHandler(service)
 
 	router := mux.NewRouter()
