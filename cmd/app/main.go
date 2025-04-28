@@ -4,9 +4,12 @@ import (
 	"CheckingErrorsHW2/internal/database"
 	"CheckingErrorsHW2/internal/handlers"
 	"CheckingErrorsHW2/internal/taskService"
-	"github.com/gorilla/mux"
+	"CheckingErrorsHW2/internal/web/tasks"
+	//"github.com/gorilla/mux"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"log"
-	"net/http"
+	//"net/http"
 	"strings"
 )
 
@@ -28,15 +31,17 @@ func main() {
 	service := taskService.NewService(repo)
 	handler := handlers.NewHandler(service)
 
-	router := mux.NewRouter()
-	router.HandleFunc("/api/tasks", handler.GetHandler).Methods(http.MethodGet)
-	router.HandleFunc("/api/tasks", handler.PostHandler).Methods(http.MethodPost)
-	router.HandleFunc("/api/tasks/{id}", handler.PatchHandler).Methods(http.MethodPatch)
-	router.HandleFunc("/api/tasks/{id}", handler.DeleteHandler).Methods(http.MethodDelete)
+	e := echo.New()
+
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+
+	strictHandler := tasks.NewStrictHandler(handler, nil)
+	tasks.RegisterHandlers(e, strictHandler)
 
 	log.Println("Server started at localhost:8080")
-	err := http.ListenAndServe("localhost:8080", router)
+	err := e.Start(":8080")
 	if err != nil {
-		log.Fatal("Error starting server: ", err)
+		log.Fatalf("Error starting server: %v", err)
 	}
 }
