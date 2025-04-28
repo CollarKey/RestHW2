@@ -4,6 +4,7 @@
 DB_DSN := "postgres://postgres:yourpassword@localhost:5432/postgres?sslmode=disable"
 MIGRATE := migrate -source file://migrations -database $(DB_DSN)
 
+# Исполнение миграции, даже если файл миграции создан
 .PHONY: migrate migrate-down migrate-down-all
 
 # Таргет для создания новой миграции
@@ -26,7 +27,9 @@ migrate-down-all:
 run:
 	go run cmd/app/main.go # При вызове make run мы запустим наш сервер
 
-
 # проврка версии migrate
 migrate-version:
 	migrate -version
+
+gen:
+	oapi-codegen -config openapi/.openapi -include-tags tasks -package tasks openapi/openapi.yaml > ./internal/web/tasks/api.gen.go
