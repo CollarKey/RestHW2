@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"CheckingErrorsHW2/internal/taskService"
+	"CheckingErrorsHW2/internal/web/tasks"
+	"context"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"log"
@@ -11,6 +13,31 @@ import (
 
 type Handler struct {
 	Service *taskService.TaskService
+}
+
+func (h *Handler) GetTasks(_ context.Context, _ tasks.GetTasksRequestObject) (tasks.GetTasksResponseObject, error) {
+	allTasks, err := h.Service.GetAllTasks()
+	if err != nil {
+		return nil, err
+	}
+
+	response := tasks.GetTasks200JSONResponse{}
+
+	for _, tsk := range allTasks {
+		task := tasks.Task{
+			Id:     &tsk.ID,
+			Tasks:  &tsk.Task,
+			IsDone: &tsk.IsDone,
+		}
+		response = append(response, task)
+	}
+
+	return response, nil
+}
+
+func (h *Handler) PostTasks(ctx context.Context, request tasks.PostTasksRequestObject) (tasks.PostTasksResponseObject, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
 //
