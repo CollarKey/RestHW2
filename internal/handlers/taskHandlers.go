@@ -26,7 +26,7 @@ func (h *Handler) GetTasks(_ context.Context, _ tasks.GetTasksRequestObject) (ta
 	for _, tsk := range allTasks {
 		task := tasks.Task{
 			Id:     &tsk.ID,
-			Tasks:  &tsk.Task,
+			Task:   &tsk.Task,
 			IsDone: &tsk.IsDone,
 		}
 		response = append(response, task)
@@ -35,48 +35,31 @@ func (h *Handler) GetTasks(_ context.Context, _ tasks.GetTasksRequestObject) (ta
 	return response, nil
 }
 
-func (h *Handler) PostTasks(ctx context.Context, request tasks.PostTasksRequestObject) (tasks.PostTasksResponseObject, error) {
-	//TODO implement me
-	panic("implement me")
+func (h *Handler) PostTasks(_ context.Context, request tasks.PostTasksRequestObject) (tasks.PostTasksResponseObject, error) {
+	taskRequest := request.Body
+
+	taskToCreate := taskService.Task{
+		Task:   *taskRequest.Task,
+		IsDone: *taskRequest.IsDone,
+	}
+	createdTask, err := h.Service.CreateTask(taskToCreate)
+	if err != nil {
+		return nil, err
+	}
+
+	response := tasks.PostTasks201JSONResponse{
+		Id:     &createdTask.ID,
+		Task:   &createdTask.Task,
+		IsDone: &createdTask.IsDone,
+	}
+
+	return response, nil
 }
 
 //
 
 func NewHandler(service *taskService.TaskService) *Handler {
 	return &Handler{Service: service}
-}
-
-func (h *Handler) GetHandler(w http.ResponseWriter, r *http.Request) {
-	tasks, err := h.Service.GetAllTasks()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(tasks); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-}
-
-func (h *Handler) PostHandler(w http.ResponseWriter, r *http.Request) {
-	var task taskService.Tasks
-	err := json.NewDecoder(r.Body).Decode(&task)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	createdTask, err := h.Service.CreateTask(task)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "aaplication/json")
-	if err := json.NewEncoder(w).Encode(createdTask); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
 }
 
 func (h *Handler) PatchHandler(w http.ResponseWriter, r *http.Request) {
@@ -87,7 +70,7 @@ func (h *Handler) PatchHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var task taskService.Tasks
+	var task taskService.Task
 	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -127,8 +110,6 @@ func (h *Handler) DeleteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.Service.DeleteTask(uint(id)); err != nil {
-
-		//TODO: Добавить кастомные ошибки?
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

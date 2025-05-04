@@ -5,12 +5,12 @@ import "gorm.io/gorm"
 type TaskRepository interface {
 	//CreateTask - Передлаем в функцию task типа Task из orm.go
 	// возвращаем созданный Task и ошибку
-	CreateTask(task Tasks) (Tasks, error)
+	CreateTask(task Task) (Task, error)
 	// GetAllTasks - Возвращаем массив из всех задач в БД и ошибку
-	GetAllTasks() ([]Tasks, error)
+	GetAllTasks() ([]Task, error)
 	// UpdateTaskByID - передаем id и Task, возврщаем обновленный Task
 	// и ошибку
-	UpdateTaskByID(id uint, task Tasks) (Tasks, error)
+	UpdateTaskByID(id uint, task Task) (Task, error)
 	// DeleteTaskByID - Передаем id для удаления, возвращаем только ошибку
 	DeleteTaskByID(id uint) error
 }
@@ -24,36 +24,36 @@ func NewTaskRepository(db *gorm.DB) *taskRepository {
 }
 
 // (r *taskRepository) привязывает данную функцию к нашему репозиторию
-func (r *taskRepository) CreateTask(task Tasks) (Tasks, error) {
+func (r *taskRepository) CreateTask(task Task) (Task, error) {
 	result := r.db.Create(&task)
 	if result.Error != nil {
-		return Tasks{}, result.Error
+		return Task{}, result.Error
 	}
 	return task, nil
 }
 
-func (r *taskRepository) GetAllTasks() ([]Tasks, error) {
-	var tasks []Tasks
+func (r *taskRepository) GetAllTasks() ([]Task, error) {
+	var tasks []Task
 	err := r.db.Find(&tasks).Error
 	return tasks, err
 }
 
-func (r *taskRepository) UpdateTaskByID(id uint, task Tasks) (Tasks, error) {
-	var updateTask Tasks
+func (r *taskRepository) UpdateTaskByID(id uint, task Task) (Task, error) {
+	var updateTask Task
 	if err := r.db.First(&updateTask, id).Error; err != nil {
-		return Tasks{}, err
+		return Task{}, err
 	}
 
 	err := r.db.Model(&updateTask).Updates(task)
 	if err.Error != nil {
-		return Tasks{}, err.Error
+		return Task{}, err.Error
 	}
 
 	return updateTask, nil
 }
 
 func (r *taskRepository) DeleteTaskByID(id uint) error {
-	return r.db.Delete(&Tasks{}, id).Error
+	return r.db.Delete(&Task{}, id).Error
 	// написал ранее result := r.db.Delete(&requestBody{}, id)
 	// if result.Error != nil {
 	//	return result.Error
