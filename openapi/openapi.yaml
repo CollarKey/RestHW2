@@ -31,6 +31,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Task'
+
       responses:
         '201':
           description: The created task
@@ -38,6 +39,66 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Task'
+
+  /tasks/{id}:
+    patch:
+      summary: Partial update the task
+      tags:
+        - tasks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the task to update
+          schema:
+            type: integer
+            format: uint
+      requestBody:
+        description: The fields to partially update
+        required: true
+        content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task:
+                    type: string
+                  is_done:
+                    type: boolean
+                additionalProperties: false
+
+      responses:
+        '200':
+          description: Task updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          description: Task not found
+        '404':
+          description: Invalid input data
+
+
+    delete:
+      summary: Delete the task
+      tags:
+        - tasks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the task to delete
+          schema:
+            type: integer
+            format: uint
+
+      responses:
+        '204':
+          description: Task deleted
+        '404':
+          description: Task not found
+
 
 components:
   schemas:
@@ -47,7 +108,7 @@ components:
         id:
           type: integer
           format: uint
-        tasks:
+        task:
           type: string
         is_done:
           type: boolean
