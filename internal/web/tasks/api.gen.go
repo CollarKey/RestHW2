@@ -188,6 +188,14 @@ func (response DeleteTasksId204Response) VisitDeleteTasksIdResponse(w http.Respo
 	return nil
 }
 
+type DeleteTasksId400Response struct {
+}
+
+func (response DeleteTasksId400Response) VisitDeleteTasksIdResponse(w http.ResponseWriter) error {
+	w.WriteHeader(400)
+	return nil
+}
+
 type DeleteTasksId404Response struct {
 }
 
