@@ -1,0 +1,30 @@
+linters:
+  default: all
+
+  enable:
+    - govet # Проверка корректности кода
+    - staticcheck # Статический анализ
+    - gosec # Безопасность
+    - errcheck # Проверка обработки ошибок
+    - revive # Стиль кода
+    - bodyclose # Проверка закрытия HTTP body
+    - unused
+    - err113
+
+  disable:
+    - depguard
+    - godot
+    - varnamelen
+
+issues:
+  exclude-use-default: false # Отключить игнорирование стандартных исключений
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+run:
+  issues.exclude-dirs:
+    - openapi
+    - migrations
+    - internal/web
+
+version: 2

@@ -1,20 +1,28 @@
+// Package database provides database connection management
 package database
 
 import (
+	"errors"
 	"fmt"
+	"log"
+
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"log"
 )
 
-var DB *gorm.DB
+// ErrNoTaskTable указывает отсутствие таблицы 'tasks' в БД (psql код: 42P01)
+var ErrNoTaskTable = errors.New("таблица 'tasks' не найдена (код: 42P01)")
 
+
+// InitDB initialized database connection.
+//
+// Returns:
+// - error if failed connect to database.
+// - error if required table 'task' not exist.
 func InitDB() (*gorm.DB, error) {
-
 	dsn := "postgres://postgres:yourpassword@localhost:5432/postgres?sslmode=disable"
-	var err error
-	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+	DB, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		DisableAutomaticPing:                     true,
 		SkipDefaultTransaction:                   true,
 		DisableForeignKeyConstraintWhenMigrating: true,
@@ -24,7 +32,8 @@ func InitDB() (*gorm.DB, error) {
 	if err != nil {
 		log.Fatalf("Failed connect to database, %v ", err)
 	}
-	// обработка ошибки отсутствия созданной таблицы tasks в БД
+
+	// tableExists обрабатывает ошибку отсутствия созданной таблицы tasks в БД.
 	var tableExists bool
 	err = DB.Raw(`
         SELECT EXISTS (
@@ -40,7 +49,7 @@ func InitDB() (*gorm.DB, error) {
 	}
 
 	if !tableExists {
-		return nil, fmt.Errorf("таблица 'tasks' не найдена (код: 42P01)")
+		return nil, ErrNoTaskTable
 	}
 
 	return DB, nil

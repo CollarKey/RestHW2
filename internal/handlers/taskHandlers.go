@@ -1,22 +1,39 @@
+// Package handlers содержит обработчики HTTP-запросов, прием запросов, первичную валидацию данных,
+// обработку ошибок и передачу данных на низлежащие слои бизнес-логики.
 package handlers
 
 import (
-	"CheckingErrorsHW2/internal/taskService"
+	"CheckingErrorsHW2/internal/taskservice"
 	"CheckingErrorsHW2/internal/web/tasks"
 	"context"
-	//"encoding/json"
-	//"fmt"
-	//"github.com/gorilla/mux"
+	"errors"
+	"fmt"
 	"log"
-	//"net/http"
-	//"strconv"
-	//"golang.org/x/crypto/ssh"
 )
 
+// ErrReqBodyNil проверяет, что тело запроса равно nil
+var ErrReqBodyNil = errors.New("request body cannot be nil")
+
+// ErrNotFound указывает, что задача не найдена
+var ErrNotFound = errors.New("cannot find the Task")
+
+// Handler является HTTP-обработчиком, содержащим ссылку на сервис бизнес-логики
+// используется для обработки входящих HTTP-запросов и взаимодействия с сервисами.
 type Handler struct {
-	Service *taskService.TaskService
+	Service *taskservice.TaskService
 }
 
+// NewHandler создает новый экземпляр Handler,
+// является точкой входа для вызова слоя бизнес-логики taskservice и возвращает результат клиенту.
+func NewHandler(service *taskservice.TaskService) *Handler {
+	return &Handler{Service: service}
+}
+
+// DeleteTasksId обрабатывает HTTP-запрос на удаление Task по ID
+// проводит первичную валидацию входных данных, перенаправляет запрос в нижний бизнес-слой для удаления Task
+// возвращает соответствующий ответ в зависимости от результата операции.
+//
+//nolint:revive
 func (h *Handler) DeleteTasksId(_ context.Context, request tasks.DeleteTasksIdRequestObject) (tasks.DeleteTasksIdResponseObject, error) {
 	id := request.Id
 
@@ -26,12 +43,17 @@ func (h *Handler) DeleteTasksId(_ context.Context, request tasks.DeleteTasksIdRe
 
 	err := h.Service.DeleteTask(id)
 	if err != nil {
-		return tasks.DeleteTasksId404Response{}, nil
+		return tasks.DeleteTasksId404Response{}, ErrNotFound
 	}
 
 	return tasks.DeleteTasksId204Response{}, nil
 }
 
+// PatchTasksId обрабатывает HTTP-запрос на обновление Task по ID
+// проводит первичную валидацию входных данных, перенаправляет запрос в нижний бизнес-слой для обновления Task
+// возвращает соответствующий ответ в зависимости от результата операции.
+//
+//nolint:revive
 func (h *Handler) PatchTasksId(_ context.Context, request tasks.PatchTasksIdRequestObject) (tasks.PatchTasksIdResponseObject, error) {
 	id := request.Id
 	taskRequest := request.Body
@@ -45,14 +67,14 @@ func (h *Handler) PatchTasksId(_ context.Context, request tasks.PatchTasksIdRequ
 		return errResp400, nil
 	}
 
-	taskToUpdate := taskService.Task{
+	taskToUpdate := taskservice.Task{
 		Task:   *taskRequest.Task,
 		IsDone: *taskRequest.IsDone,
 	}
 
-	updatedTask, err := h.Service.UpdateTaskByID(uint(id), taskToUpdate)
+	updatedTask, err := h.Service.UpdateTaskByID(id, taskToUpdate)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to updated the task by ID: %w", err)
 	}
 
 	response := tasks.PatchTasksId200JSONResponse{
@@ -64,10 +86,12 @@ func (h *Handler) PatchTasksId(_ context.Context, request tasks.PatchTasksIdRequ
 	return response, nil
 }
 
+// GetTasks обрабатывает HTTP-запрос на получение всех Task
+// возвращает соответствующий ответ в зависимости от результата операции.
 func (h *Handler) GetTasks(_ context.Context, _ tasks.GetTasksRequestObject) (tasks.GetTasksResponseObject, error) {
 	allTasks, err := h.Service.GetAllTasks()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get all tasks: %w", err)
 	}
 
 	response := tasks.GetTasks200JSONResponse{}
@@ -84,32 +108,35 @@ func (h *Handler) GetTasks(_ context.Context, _ tasks.GetTasksRequestObject) (ta
 	return response, nil
 }
 
+// PostTasks обрабатывает HTTP-запрос на создание Task
+// проводит первичную валидацию на nil тело запроса
+// возвращает соответствующий ответ в зависимости от результата операции.
 func (h *Handler) PostTasks(_ context.Context, request tasks.PostTasksRequestObject) (tasks.PostTasksResponseObject, error) {
-	taskRequest := request.Body
-
 	if request.Body == nil {
 		log.Printf("Invalid request: request body is nil")
-		return nil, nil
+
+		return nil, ErrReqBodyNil
 	}
 
-	taskToCreate := taskService.Task{
+	taskToCreate := taskservice.Task{
 		Task:   "",
 		IsDone: false,
 	}
 
-	if request.Body.Task != nil {
-		taskToCreate.Task = *taskRequest.Task
+	if taskReq := request.Body.Task; taskReq != nil {
+		taskToCreate.Task = *taskReq
 	}
-	if request.Body.IsDone != nil {
-		taskToCreate.IsDone = *taskRequest.IsDone
+
+	if isDoneReq := request.Body.IsDone; isDoneReq != nil {
+		taskToCreate.IsDone = *isDoneReq
 	}
 
 	createdTask, err := h.Service.CreateTask(taskToCreate)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create the task: %w", err)
 	}
 
-	response := tasks.PostTasks201JSONResponse{
+	response := &tasks.PostTasks201JSONResponse{
 		Id:     &createdTask.ID,
 		Task:   &createdTask.Task,
 		IsDone: &createdTask.IsDone,
@@ -117,62 +144,3 @@ func (h *Handler) PostTasks(_ context.Context, request tasks.PostTasksRequestObj
 
 	return response, nil
 }
-
-func NewHandler(service *taskService.TaskService) *Handler {
-	return &Handler{Service: service}
-}
-
-//func (h *Handler) PatchHandler(w http.ResponseWriter, r *http.Request) {
-//	vars := mux.Vars(r)
-//	idStr := vars["id"]
-//	if idStr == "" {
-//		http.Error(w, "Incorrect ID, no ID specified", http.StatusBadRequest)
-//		return
-//	}
-//
-//	var task taskService.Task
-//	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
-//		http.Error(w, err.Error(), http.StatusBadRequest)
-//		return
-//	}
-//
-//	id, err := strconv.ParseUint(idStr, 10, 32)
-//	if err != nil {
-//		http.Error(w, err.Error(), http.StatusBadRequest)
-//		return
-//	}
-//
-//	updatedTask, err := h.Service.UpdateTaskByID(uint(id), task)
-//	if err != nil {
-//		http.Error(w, err.Error(), http.StatusInternalServerError)
-//		return
-//	}
-//
-//	w.Header().Set("Content-Type", "application/json")
-//	if err := json.NewEncoder(w).Encode(updatedTask); err != nil {
-//		log.Printf("Could not encode response %v", err)
-//		return
-//	}
-//}
-//
-//func (h *Handler) DeleteHandler(w http.ResponseWriter, r *http.Request) {
-//	vars := mux.Vars(r)
-//	StrId := vars["id"]
-//	if StrId == "" {
-//		http.Error(w, "No ID specified", http.StatusBadRequest)
-//		return
-//	}
-//
-//	id, err := strconv.ParseUint(StrId, 10, 32)
-//	if err != nil {
-//		http.Error(w, "Invalid ID format", http.StatusBadRequest)
-//		return
-//	}
-//
-//	if err := h.Service.DeleteTask(uint(id)); err != nil {
-//		http.Error(w, err.Error(), http.StatusInternalServerError)
-//		return
-//	}
-//
-//	w.WriteHeader(http.StatusNoContent)
-//}
