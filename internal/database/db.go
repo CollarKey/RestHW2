@@ -1,4 +1,7 @@
-// Package database provides database connection management
+// Package database provides database connection management.
+//
+//nolint:exhaustr
+//nolint:exhaustruct
 package database
 
 import (
@@ -11,9 +14,8 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-// ErrNoTaskTable указывает отсутствие таблицы 'tasks' в БД (psql код: 42P01)
+// ErrNoTaskTable указывает отсутствие таблицы 'tasks' в БД (psql код: 42P01).
 var ErrNoTaskTable = errors.New("таблица 'tasks' не найдена (код: 42P01)")
-
 
 // InitDB initialized database connection.
 //

@@ -1,5 +1,7 @@
 // Package handlers содержит обработчики HTTP-запросов, прием запросов, первичную валидацию данных,
 // обработку ошибок и передачу данных на низлежащие слои бизнес-логики.
+//
+//nolint:exhaustruct
 package handlers
 
 import (
@@ -11,10 +13,10 @@ import (
 	"log"
 )
 
-// ErrReqBodyNil проверяет, что тело запроса равно nil
+// ErrReqBodyNil проверяет, что тело запроса равно nil.
 var ErrReqBodyNil = errors.New("request body cannot be nil")
 
-// ErrNotFound указывает, что задача не найдена
+// ErrNotFound указывает, что задача не найдена.
 var ErrNotFound = errors.New("cannot find the Task")
 
 // Handler является HTTP-обработчиком, содержащим ссылку на сервис бизнес-логики
@@ -24,7 +26,7 @@ type Handler struct {
 }
 
 // NewHandler создает новый экземпляр Handler,
-// является точкой входа для вызова слоя бизнес-логики taskservice и возвращает результат клиенту.
+// является точкой входа для вызова слоя бизнес-логики taskService и возвращает результат клиенту.
 func NewHandler(service *taskservice.TaskService) *Handler {
 	return &Handler{Service: service}
 }
@@ -103,6 +105,28 @@ func (h *Handler) GetTasks(_ context.Context, _ tasks.GetTasksRequestObject) (ta
 			IsDone: &tsk.IsDone,
 		}
 		response = append(response, task)
+	}
+
+	return response, nil
+}
+
+// GetTaskByID обрабатывает HTTP-запрос на получение Task по ID.
+func (h *Handler) GetTaskByID(_ context.Context, request tasks.GetTasksIdRequestObject) (tasks.GetTasksIdResponseObject, error) {
+	id := request.Id
+
+	if id == 0 {
+		return tasks.GetTasksId400Response{}, nil
+	}
+
+	task, err := h.Service.GetTaskByID(id)
+	if err != nil {
+		return tasks.GetTasksId404Response{}, ErrNotFound
+	}
+
+	response := tasks.GetTasksId200JSONResponse{
+		Id:     &task.ID,
+		Task:   &task.Task,
+		IsDone: &task.IsDone,
 	}
 
 	return response, nil

@@ -1,39 +1,38 @@
-# Makefile для создания миграций
-
-# Переменные которые будут использоваться в наших командах (Таргетах)
+# DB_DSN и MIGRATE Переменные которые будут использоваться в наших командах (Таргетах).
 DB_DSN := "postgres://postgres:yourpassword@localhost:5432/postgres?sslmode=disable"
 MIGRATE := migrate -source file://migrations -database $(DB_DSN)
 
-# Исполнение миграции, даже если файл миграции создан
+# Исполнение миграции, даже если файл миграции создан.
 .PHONY: migrate migrate-down migrate-down-all
 
-# Таргет для создания новой миграции
+# migrate-new Таргет для создания новой миграции.
 migrate-new:
 	migrate create -ext sql -dir ./migrations ${NAME}
 
-# Применение миграций
+# migrate Применение миграций.
 migrate:
 	$(MIGRATE) up
 
-# Откат миграции
+# migrate-down Откат миграции.
 migrate-down:
 	$(MIGRATE) down
 
-# Откат всех миграций
+# migrate-down-all Откат всех миграций.
 migrate-down-all:
 	$(MIGRATE) down -all
 
-# для удобства добавим команду run, которая будет запускать наше приложение
+# run запускает приложение.
 run:
 	go run cmd/app/main.go # При вызове make run мы запустим наш сервер
 
-# проврка версии migrate
+# проверка версии migrate.
 migrate-version:
 	migrate -version
 
+# lint проверка линтерами.
 lint:
 	golangci-lint run --color=always
 
-
+# gen исполнение кодогенерации.
 gen:
 	oapi-codegen -config openapi/.openapi -include-tags tasks -package tasks openapi/openapi.yaml > ./internal/web/tasks/api.gen.go

@@ -44,6 +44,9 @@ type ServerInterface interface {
 	// Delete the task
 	// (DELETE /tasks/{id})
 	DeleteTasksId(ctx echo.Context, id uint) error
+	// get task by ID
+	// (GET /tasks/{id})
+	GetTasksId(ctx echo.Context, id uint) error
 	// Partial update the task
 	// (PATCH /tasks/{id})
 	PatchTasksId(ctx echo.Context, id uint) error
@@ -85,6 +88,22 @@ func (w *ServerInterfaceWrapper) DeleteTasksId(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.DeleteTasksId(ctx, id)
+	return err
+}
+
+// GetTasksId converts echo context to params.
+func (w *ServerInterfaceWrapper) GetTasksId(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id uint
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetTasksId(ctx, id)
 	return err
 }
 
@@ -135,6 +154,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/tasks", wrapper.GetTasks)
 	router.POST(baseURL+"/tasks", wrapper.PostTasks)
 	router.DELETE(baseURL+"/tasks/:id", wrapper.DeleteTasksId)
+	router.GET(baseURL+"/tasks/:id", wrapper.GetTasksId)
 	router.PATCH(baseURL+"/tasks/:id", wrapper.PatchTasksId)
 
 }
@@ -204,6 +224,39 @@ func (response DeleteTasksId404Response) VisitDeleteTasksIdResponse(w http.Respo
 	return nil
 }
 
+type GetTasksIdRequestObject struct {
+	Id uint `json:"id"`
+}
+
+type GetTasksIdResponseObject interface {
+	VisitGetTasksIdResponse(w http.ResponseWriter) error
+}
+
+type GetTasksId200JSONResponse Task
+
+func (response GetTasksId200JSONResponse) VisitGetTasksIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetTasksId400Response struct {
+}
+
+func (response GetTasksId400Response) VisitGetTasksIdResponse(w http.ResponseWriter) error {
+	w.WriteHeader(400)
+	return nil
+}
+
+type GetTasksId404Response struct {
+}
+
+func (response GetTasksId404Response) VisitGetTasksIdResponse(w http.ResponseWriter) error {
+	w.WriteHeader(404)
+	return nil
+}
+
 type PatchTasksIdRequestObject struct {
 	Id   uint `json:"id"`
 	Body *PatchTasksIdJSONRequestBody
@@ -249,6 +302,9 @@ type StrictServerInterface interface {
 	// Delete the task
 	// (DELETE /tasks/{id})
 	DeleteTasksId(ctx context.Context, request DeleteTasksIdRequestObject) (DeleteTasksIdResponseObject, error)
+	// get task by ID
+	// (GET /tasks/{id})
+	GetTasksId(ctx context.Context, request GetTasksIdRequestObject) (GetTasksIdResponseObject, error)
 	// Partial update the task
 	// (PATCH /tasks/{id})
 	PatchTasksId(ctx context.Context, request PatchTasksIdRequestObject) (PatchTasksIdResponseObject, error)
@@ -337,6 +393,31 @@ func (sh *strictHandler) DeleteTasksId(ctx echo.Context, id uint) error {
 		return err
 	} else if validResponse, ok := response.(DeleteTasksIdResponseObject); ok {
 		return validResponse.VisitDeleteTasksIdResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetTasksId operation middleware
+func (sh *strictHandler) GetTasksId(ctx echo.Context, id uint) error {
+	var request GetTasksIdRequestObject
+
+	request.Id = id
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetTasksId(ctx.Request().Context(), request.(GetTasksIdRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetTasksId")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetTasksIdResponseObject); ok {
+		return validResponse.VisitGetTasksIdResponse(ctx.Response())
 	} else if response != nil {
 		return fmt.Errorf("unexpected response type: %T", response)
 	}
