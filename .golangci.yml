@@ -15,6 +15,7 @@ linters:
     - depguard
     - godot
     - varnamelen
+    - lll
 
 issues:
   exclude-use-default: false # Отключить игнорирование стандартных исключений
