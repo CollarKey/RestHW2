@@ -1,6 +1,5 @@
 // Package database provides database connection management.
 //
-//nolint:exhaustr
 //nolint:exhaustruct
 package database
 
