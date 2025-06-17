@@ -1,7 +1,7 @@
 // Package handlers содержит обработчики HTTP-запросов, прием запросов, первичную валидацию данных,
 // обработку ошибок и передачу данных на низлежащие слои бизнес-логики.
 //
-//nolint:exhaustruct
+//nolint:exhaustruct, revive, ireturn
 package handlers
 
 import (
@@ -69,14 +69,22 @@ func (h *Handler) PatchTasksId(_ context.Context, request tasks.PatchTasksIdRequ
 		return errResp400, nil
 	}
 
-	taskToUpdate := taskservice.Task{
-		Task:   *taskRequest.Task,
-		IsDone: *taskRequest.IsDone,
+	taskToUpdate, err := h.Service.GetTaskByID(id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the task by ID: %w", err)
+	}
+
+	if taskRequest.Task != nil {
+		taskToUpdate.Task = *taskRequest.Task
+	}
+
+	if taskRequest.IsDone != nil {
+		taskToUpdate.IsDone = *taskRequest.IsDone
 	}
 
 	updatedTask, err := h.Service.UpdateTaskByID(id, taskToUpdate)
 	if err != nil {
-		return nil, fmt.Errorf("failed to updated the task by ID: %w", err)
+		return nil, fmt.Errorf("failed to update the task by ID: %w", err)
 	}
 
 	response := tasks.PatchTasksId200JSONResponse{
@@ -110,8 +118,8 @@ func (h *Handler) GetTasks(_ context.Context, _ tasks.GetTasksRequestObject) (ta
 	return response, nil
 }
 
-// GetTaskByID обрабатывает HTTP-запрос на получение Task по ID.
-func (h *Handler) GetTaskByID(_ context.Context, request tasks.GetTasksIdRequestObject) (tasks.GetTasksIdResponseObject, error) {
+// GetTasksId обрабатывает HTTP-запрос на получение Task по ID.
+func (h *Handler) GetTasksId(_ context.Context, request tasks.GetTasksIdRequestObject) (tasks.GetTasksIdResponseObject, error) {
 	id := request.Id
 
 	if id == 0 {
