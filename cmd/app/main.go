@@ -5,7 +5,9 @@ import (
 	"CheckingErrorsHW2/internal/database"
 	"CheckingErrorsHW2/internal/handlers"
 	"CheckingErrorsHW2/internal/taskservice"
+	"CheckingErrorsHW2/internal/userservice"
 	"CheckingErrorsHW2/internal/web/tasks"
+	"CheckingErrorsHW2/internal/web/users"
 	"log"
 	"strings"
 
@@ -13,32 +15,49 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-// isTableNotExistError проверяет наличие ошибки создания таблицы 'tasks' в БД.
-func isTableNotExistError(err error) bool {
+// isTableTasksNotExistError проверяет наличие ошибки создания таблицы 'tasks' в БД.
+func isTableTasksNotExistError(err error) bool {
 	return strings.Contains(err.Error(), "таблица 'tasks' не найдена (код: 42P01)")
+}
+
+// isTableUsersNotExistError проверяет наличие ошибки создания таблицы 'users' в БД.
+func isTableUsersNotExistError(err error) bool {
+	return strings.Contains(err.Error(), "таблица 'users' не найдена (код: 42P01)")
 }
 
 func main() {
 	dbConnect, dbErr := database.InitDB()
 	if dbErr != nil {
-		if isTableNotExistError(dbErr) {
-			log.Fatalf("FATAL ERROR: %v\nВыполните: make migrate", dbErr)
+		isTasksTableErr := isTableTasksNotExistError(dbErr)
+		if isTasksTableErr {
+			log.Fatalf("FATAL ERROR: %v\nВыполните: make migrate для Tasks", dbErr)
+		}
+
+		isUsersTableError := isTableUsersNotExistError(dbErr)
+		if isUsersTableError {
+			log.Fatalf("FATAL ERROR: %v\nВыполните: make migrate для Users", dbErr)
 		}
 
 		log.Fatal("Ошибки инициализации БД:", dbErr)
 	}
 
-	repo := taskservice.NewTaskRepository(dbConnect)
-	service := taskservice.NewService(repo)
-	handler := handlers.NewHandler(service)
+	taskRepo := taskservice.NewTaskRepository(dbConnect)
+	taskService := taskservice.NewService(taskRepo)
+	taskHandler := handlers.NewHandler(taskService)
 
+	userRepo := userservice.NewUserRepository(dbConnect)
+	userService := userservice.NewUserService(userRepo)
+	userHandler := handlers.NewUserHandler(userService)
 	e := echo.New()
 
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	strictHandler := tasks.NewStrictHandler(handler, nil)
-	tasks.RegisterHandlers(e, strictHandler)
+	strictTaskHandler := tasks.NewStrictHandler(taskHandler, nil)
+	tasks.RegisterHandlers(e, strictTaskHandler)
+
+	strictUserHandler := users.NewStrictHandler(userHandler, nil)
+	users.RegisterHandlers(e, strictUserHandler)
 
 	err := e.Start(":8080")
 	if err != nil {

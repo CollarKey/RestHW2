@@ -33,6 +33,10 @@ migrate-version:
 lint:
 	golangci-lint run --color=always
 
-# gen исполнение кодогенерации.
-gen:
+# genUsers исполнение кодогенерации для Users.
+genUsers:
+	oapi-codegen -config openapi/.openapi -include-tags users -package users openapi/openapi.yaml > ./internal/web/users/api.gen.go
+
+# genTasks исполнение кодогенерации для Tasks.
+genTasks:
 	oapi-codegen -config openapi/.openapi -include-tags tasks -package tasks openapi/openapi.yaml > ./internal/web/tasks/api.gen.go
