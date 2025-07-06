@@ -1,4 +1,4 @@
-// Package taskservice service.go содержит реализацию бизнес-логики для работы с задачами.
+// Package taskservice файла taskService.go содержит реализацию бизнес-логики для работы с tasks.
 package taskservice
 
 import (

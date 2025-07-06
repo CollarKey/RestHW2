@@ -1,6 +1,5 @@
-// Package taskservice repository.go содержит реализацию репозитория для работы с задачами в базе данных.
+// Package taskservice taskRepository.go содержит реализацию репозитория для работы с задачами в базе данных.
 //
-//nolint:exhaustr
 //nolint:exhaustruct
 package taskservice
 
@@ -12,7 +11,7 @@ import (
 
 // TaskRepository provides methods to interact with the database layer.
 type TaskRepository interface {
-	// CreateTask - Передаем в функцию task типа Task из orm.go
+	// CreateTask - Передаем в функцию task типа Task из taskOrm.go
 	// возвращаем созданный Task и ошибку.
 	CreateTask(task Task) (Task, error)
 	// GetAllTasks - Возвращаем массив из всех задач в БД и ошибку.

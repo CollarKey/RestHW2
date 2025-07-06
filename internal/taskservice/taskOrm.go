@@ -1,4 +1,4 @@
-// Package taskservice orm.go содержит модели таблиц базы данных.
+// Package taskservice taskOrm.go содержит модели таблиц базы данных для task.
 package taskservice
 
 import "gorm.io/gorm"
