@@ -4,7 +4,7 @@
 package database
 
 import (
-	"errors"
+	"CheckingErrorsHW2/internal/projecterrors"
 	"fmt"
 	"log"
 
@@ -12,9 +12,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
-
-// ErrNoTaskTable указывает отсутствие таблицы 'tasks' в БД (psql код: 42P01).
-var ErrNoTaskTable = errors.New("таблица 'tasks' не найдена (код: 42P01)")
 
 // InitDB initialized database connection.
 //
@@ -33,9 +30,27 @@ func InitDB() (*gorm.DB, error) {
 	if err != nil {
 		log.Fatalf("Failed connect to database, %v ", err)
 	}
+	// tableUserExists обрабатывает ошибку отсутствия созданной таблицы users в БД.
+	var tableUserExists bool
+	err = DB.Raw(`
+        SELECT EXISTS (
+            SELECT 1 
+            FROM pg_catalog.pg_tables 
+            WHERE schemaname = 'public' 
+            AND tablename = 'users'
+        )
+    `).Scan(&tableUserExists).Error
 
-	// tableExists обрабатывает ошибку отсутствия созданной таблицы tasks в БД.
-	var tableExists bool
+	if err != nil {
+		return nil, fmt.Errorf("ошибка проверки таблицы: %w", err)
+	}
+
+	if !tableUserExists {
+		return nil, projecterrors.ErrNoUserTable
+	}
+
+	// tableTaskExists обрабатывает ошибку отсутствия созданной таблицы tasks в БД.
+	var tableTaskExists bool
 	err = DB.Raw(`
         SELECT EXISTS (
             SELECT 1 
@@ -43,14 +58,14 @@ func InitDB() (*gorm.DB, error) {
             WHERE schemaname = 'public' 
             AND tablename = 'tasks'
         )
-    `).Scan(&tableExists).Error
+    `).Scan(&tableTaskExists).Error
 
 	if err != nil {
 		return nil, fmt.Errorf("ошибка проверки таблицы: %w", err)
 	}
 
-	if !tableExists {
-		return nil, ErrNoTaskTable
+	if !tableTaskExists {
+		return nil, projecterrors.ErrNoTaskTable
 	}
 
 	return DB, nil

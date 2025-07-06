@@ -1,23 +1,17 @@
-// Package handlers содержит обработчики HTTP-запросов, прием запросов, первичную валидацию данных,
-// обработку ошибок и передачу данных на низлежащие слои бизнес-логики.
+// Package handlers taskHandlers.go содержит обработчики HTTP-запросов для tasks, прием запросов,
+// первичную валидацию данных, обработку ошибок и передачу данных на низлежащие слои бизнес-логики.
 //
 //nolint:exhaustruct, revive, ireturn
 package handlers
 
 import (
+	"CheckingErrorsHW2/internal/projecterrors"
 	"CheckingErrorsHW2/internal/taskservice"
 	"CheckingErrorsHW2/internal/web/tasks"
 	"context"
-	"errors"
 	"fmt"
 	"log"
 )
-
-// ErrReqBodyNil проверяет, что тело запроса равно nil.
-var ErrReqBodyNil = errors.New("request body cannot be nil")
-
-// ErrNotFound указывает, что задача не найдена.
-var ErrNotFound = errors.New("cannot find the Task")
 
 // Handler является HTTP-обработчиком, содержащим ссылку на сервис бизнес-логики
 // используется для обработки входящих HTTP-запросов и взаимодействия с сервисами.
@@ -45,7 +39,7 @@ func (h *Handler) DeleteTasksId(_ context.Context, request tasks.DeleteTasksIdRe
 
 	err := h.Service.DeleteTask(id)
 	if err != nil {
-		return tasks.DeleteTasksId404Response{}, ErrNotFound
+		return tasks.DeleteTasksId404Response{}, projecterrors.ErrNotFoundTask
 	}
 
 	return tasks.DeleteTasksId204Response{}, nil
@@ -128,7 +122,7 @@ func (h *Handler) GetTasksId(_ context.Context, request tasks.GetTasksIdRequestO
 
 	task, err := h.Service.GetTaskByID(id)
 	if err != nil {
-		return tasks.GetTasksId404Response{}, ErrNotFound
+		return tasks.GetTasksId404Response{}, projecterrors.ErrNotFoundTask
 	}
 
 	response := tasks.GetTasksId200JSONResponse{
@@ -147,7 +141,7 @@ func (h *Handler) PostTasks(_ context.Context, request tasks.PostTasksRequestObj
 	if request.Body == nil {
 		log.Printf("Invalid request: request body is nil")
 
-		return nil, ErrReqBodyNil
+		return nil, projecterrors.ErrReqBodyNilTask
 	}
 
 	taskToCreate := taskservice.Task{
