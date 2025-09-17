@@ -38,7 +38,7 @@ type ServerInterface interface {
 	// get all users
 	// (GET /users)
 	GetUsers(ctx echo.Context) error
-	// Create a new task
+	// Create a new User
 	// (POST /users)
 	PostUsers(ctx echo.Context) error
 	// Delete user
@@ -296,7 +296,7 @@ type StrictServerInterface interface {
 	// get all users
 	// (GET /users)
 	GetUsers(ctx context.Context, request GetUsersRequestObject) (GetUsersResponseObject, error)
-	// Create a new task
+	// Create a new User
 	// (POST /users)
 	PostUsers(ctx context.Context, request PostUsersRequestObject) (PostUsersResponseObject, error)
 	// Delete user

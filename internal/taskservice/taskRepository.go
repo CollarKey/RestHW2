@@ -23,6 +23,8 @@ type TaskRepository interface {
 	UpdateTaskByID(id uint, task Task) (Task, error)
 	// DeleteTaskByID - Передаем id для удаления, возвращаем только ошибку.
 	DeleteTaskByID(id uint) error
+	//GetTasksByUserID - передаем userID для получения всех задач user.
+	GetTasksByUserID(userID uint) ([]Task, error)
 }
 
 // DbTaskRepository реализует репозиторий task, предоставляет методы для взаимодействия с таблицей tasks в БД.
@@ -33,6 +35,16 @@ type DbTaskRepository struct {
 // NewTaskRepository создает новый экземпляр DbTaskRepository с подключением к БД.
 func NewTaskRepository(db *gorm.DB) *DbTaskRepository {
 	return &DbTaskRepository{db: db}
+}
+
+// GetTasksByUserID находит все tasks в БД принадлежащие user с присвоенным id.
+func (r *DbTaskRepository) GetTasksByUserID(userID uint) ([]Task, error) {
+	var tasks []Task
+	if err := r.db.Where("user_id = ?", userID).Find(&tasks).Error; err != nil {
+		return nil, fmt.Errorf("repository: failed to get tasks of the user: %w", err)
+	}
+
+	return tasks, nil
 }
 
 // CreateTask добавляет новую task в БД и возвращает её с присвоенным ID.

@@ -19,12 +19,12 @@ func NewUserService(repo UserRepository) *UserService {
 
 // CreateUser реализует бизнес-логику на создание нового User, используя методы репозитория.
 func (s *UserService) CreateUser(user User) (User, error) {
-	users, err := s.repo.CreateUser(user)
+	createdUser, err := s.repo.CreateUser(user)
 	if err != nil{
 		return User{}, fmt.Errorf("service: failed to create user: %w", err)
 	}
 
-	return users, nil
+	return createdUser, nil
 }
 
 // GetAllUsers реализует бизнес-логику на получение всех User, используя методы репозитория.

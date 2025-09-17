@@ -25,6 +25,38 @@ func NewHandler(service *taskservice.TaskService) *Handler {
 	return &Handler{Service: service}
 }
 
+// GetTasksByUserID обрабатывает HTTP запрос на получение всех Task по ID пользователя
+// проводит первичную валиадацию входных данных, перенаправляет запрос в нижний слой бизнес-архитектуры для получения
+// слайса task по соответсвтующему id user.
+func (h *Handler) GetTasksByUserID(_ context.Context, request tasks.GetTasksByUserIDRequestObject) (tasks.GetTasksByUserIDResponseObject, error) {
+	id := request.Id
+
+	if id <= 0 {
+		return tasks.GetTasksByUserID400Response{}, nil
+	}
+
+	userTasks, err := h.Service.GetTasksByUserID(uint(id))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tasks of the user: %w", err)
+	}
+
+	response := tasks.GetTasksByUserID200JSONResponse{}
+
+	for _, tsk := range userTasks {
+		if tsk.UserID == uint(id) {
+			taskID := int64(tsk.ID)
+			task := tasks.Task{
+				Id:     &taskID,
+				Task:   &tsk.Task,
+				IsDone: &tsk.IsDone,
+			}
+			response = append(response, task)
+		}
+	}
+
+	return response, nil
+}
+
 // DeleteTasksId обрабатывает HTTP-запрос на удаление Task по ID
 // проводит первичную валидацию входных данных, перенаправляет запрос в нижний бизнес-слой для удаления Task
 // возвращает соответствующий ответ в зависимости от результата операции.
@@ -37,7 +69,7 @@ func (h *Handler) DeleteTasksId(_ context.Context, request tasks.DeleteTasksIdRe
 		return tasks.DeleteTasksId400Response{}, nil
 	}
 
-	err := h.Service.DeleteTask(id)
+	err := h.Service.DeleteTask(uint(id))
 	if err != nil {
 		return tasks.DeleteTasksId404Response{}, projecterrors.ErrNotFoundTask
 	}
@@ -63,7 +95,7 @@ func (h *Handler) PatchTasksId(_ context.Context, request tasks.PatchTasksIdRequ
 		return errResp400, nil
 	}
 
-	taskToUpdate, err := h.Service.GetTaskByID(id)
+	taskToUpdate, err := h.Service.GetTaskByID(uint(id))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the task by ID: %w", err)
 	}
@@ -76,13 +108,14 @@ func (h *Handler) PatchTasksId(_ context.Context, request tasks.PatchTasksIdRequ
 		taskToUpdate.IsDone = *taskRequest.IsDone
 	}
 
-	updatedTask, err := h.Service.UpdateTaskByID(id, taskToUpdate)
+	updatedTask, err := h.Service.UpdateTaskByID(uint(id), taskToUpdate)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update the task by ID: %w", err)
 	}
 
+	updatedTaskID := int64(updatedTask.ID)
 	response := tasks.PatchTasksId200JSONResponse{
-		Id:     &updatedTask.ID,
+		Id:     &updatedTaskID,
 		IsDone: &updatedTask.IsDone,
 		Task:   &updatedTask.Task,
 	}
@@ -101,8 +134,9 @@ func (h *Handler) GetTasks(_ context.Context, _ tasks.GetTasksRequestObject) (ta
 	response := tasks.GetTasks200JSONResponse{}
 
 	for _, tsk := range allTasks {
+		taskID := int64(tsk.ID)
 		task := tasks.Task{
-			Id:     &tsk.ID,
+			Id:     &taskID,
 			Task:   &tsk.Task,
 			IsDone: &tsk.IsDone,
 		}
@@ -120,13 +154,14 @@ func (h *Handler) GetTasksId(_ context.Context, request tasks.GetTasksIdRequestO
 		return tasks.GetTasksId400Response{}, nil
 	}
 
-	task, err := h.Service.GetTaskByID(id)
+	task, err := h.Service.GetTaskByID(uint(id))
 	if err != nil {
 		return tasks.GetTasksId404Response{}, projecterrors.ErrNotFoundTask
 	}
 
+	taskID := int64(task.ID)
 	response := tasks.GetTasksId200JSONResponse{
-		Id:     &task.ID,
+		Id:     &taskID,
 		Task:   &task.Task,
 		IsDone: &task.IsDone,
 	}
@@ -144,9 +179,14 @@ func (h *Handler) PostTasks(_ context.Context, request tasks.PostTasksRequestObj
 		return nil, projecterrors.ErrReqBodyNilTask
 	}
 
+	if request.Body.UserId == nil {
+		return nil, projecterrors.ErrReqBodyNilUserID
+	}
+
 	taskToCreate := taskservice.Task{
 		Task:   "",
 		IsDone: false,
+		UserID: uint(*request.Body.UserId),
 	}
 
 	if taskReq := request.Body.Task; taskReq != nil {
@@ -162,10 +202,13 @@ func (h *Handler) PostTasks(_ context.Context, request tasks.PostTasksRequestObj
 		return nil, fmt.Errorf("failed to create the task: %w", err)
 	}
 
+	createdTaskID := int64(createdTask.ID)
+	createdUserID := int64(createdTask.UserID)
 	response := &tasks.PostTasks201JSONResponse{
-		Id:     &createdTask.ID,
+		Id:     &createdTaskID,
 		Task:   &createdTask.Task,
 		IsDone: &createdTask.IsDone,
+		UserId: &createdUserID,
 	}
 
 	return response, nil

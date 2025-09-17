@@ -8,4 +8,5 @@ type Task struct {
 	gorm.Model
 	Task   string `json:"task"`
 	IsDone bool   `json:"isDone"`
+	UserID uint   `json:"userID" gorm:"not null;index"`
 }

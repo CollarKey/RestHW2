@@ -38,5 +38,6 @@ genUsers:
 	oapi-codegen -config openapi/.openapi -include-tags users -package users openapi/openapi.yaml > ./internal/web/users/api.gen.go
 
 # genTasks исполнение кодогенерации для Tasks.
+# убран тег -include-tags tasks, для вывода tasks по userID
 genTasks:
-	oapi-codegen -config openapi/.openapi -include-tags tasks -package tasks openapi/openapi.yaml > ./internal/web/tasks/api.gen.go
+	oapi-codegen -config openapi/.openapi -package tasks openapi/openapi.yaml > ./internal/web/tasks/api.gen.go

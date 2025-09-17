@@ -16,6 +16,15 @@ func NewService(repo TaskRepository) *TaskService {
 	return &TaskService{repo: repo}
 }
 
+// GetTasksByUserID реализует бизнес-логику для получения всех tasks, по id user
+func (s *TaskService) GetTasksByUserID(userID uint) ([]Task, error) {
+	usrTasks, err := s.repo.GetTasksByUserID(userID)
+	if err != nil {
+		return nil, fmt.Errorf("service: failed to get user's tasks: %w", err)
+	}
+	return usrTasks, nil
+}
+
 // CreateTask реализует бизнес-логику для создания task, используя методы репозитория.
 func (s *TaskService) CreateTask(task Task) (Task, error) {
 	tasks, err := s.repo.CreateTask(task)

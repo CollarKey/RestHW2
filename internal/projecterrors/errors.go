@@ -12,6 +12,9 @@ var ErrPasswordRequired = errors.New("field 'password' is required")
 // ErrReqBodyNilTask проверяет, что тело запроса равно nil.
 var ErrReqBodyNilTask = errors.New("request body cannot be nil")
 
+// ErrNilUserID указывает, что поле UserID равно nil.
+var ErrReqBodyNilUserID = errors.New("user ID cannot be nil")
+
 // ErrNotFoundTask указывает, что задача не найдена.
 var ErrNotFoundTask = errors.New("cannot find the Task")
 
